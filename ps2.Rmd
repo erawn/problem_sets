@@ -50,12 +50,17 @@ colnames(d)
 And see if you can figure out what range the likert scores are in. What's the highest number on the likert scale, and what's the lowest? (Hint, `d$Game1Angry1` is one of the likert rating columns, and you may want to use `unique` or `range` or `hist`)
 
 ```{r}
-## your code here
+d%>%
+    filter(!is.na(Game1Angry1)) %>%
+    select(Game1Angry1) %>%
+    range()
+    
+
 
 ```
 
-Highest number: [Your answer here]
-Lowest number: [Your answer here]
+Highest number: [7]
+Lowest number: [1]
 
 # cleaning up a bit
 
@@ -72,7 +77,7 @@ First, we need to `filter` out any rows that should be excluded. According to th
 You can see participant 23's data and the fact that they did not do part 1 by looking at the last rows of the dataframe:
 
 ```{r}
-tail(d)
+d[163]
 ```
 
 Notice that participant 23 has missing values for part 1.
@@ -81,7 +86,8 @@ The researchers have made a column called `DoNotUse` based on their exlusion cri
 
 ```{r}
 filtered_d = d %>% 
-  filter(   ) # your code here: exclude subjects that are marked as "DoNotUse"
+  filter(is.na(DoNotUse)) # your code here: exclude subjects that are marked as "DoNotUse"
+
 ```
 
 It's good practice to assign a new variable name (in this case `filtered_d`) to a data frame when you change it in an important way, or apply a code chunk that shouldn't be run twice. This helps prevent you seeing different results when you run your code in chunks (and might run one multiple times, or skip it, etc.) vs. knit the document.
@@ -112,13 +118,16 @@ rating_hyp_d = filtered_d %>%
   select(-DoNotUseVideoGamePerformanceData, # now get rid of that column
          -starts_with("DinerDash"), # and the other columns we don't need
          -starts_with("SOF"))
+head(rating_hyp_d)
 ```
 
 Now you try! Fill in the selection criteria to get rid of the "Game" columns, which we don't need for the performance hypothesis. (It's simpler than the code block above, because you don't need to do a `filter` first, only a `select`.)
 
 ```{r}
 performance_hyp_d = filtered_d %>% 
-  select( ) # your code here: remove the columns containing "Game" in the name
+  select(!contains("Game") ) # your code here: remove the columns containing "Game" in the name
+performance_hyp_d
+
 ```
 
 # Converting to long form
@@ -158,7 +167,9 @@ And you can convert the rating dataset! (Call the "Key" column "Measurement" and
 
 ```{r}
 rating_hyp_long_d = rating_hyp_d %>%
-  ## your code here
+  pivot_longer(cols=-c("Subject", "Cond"),
+               names_to='Measurement',
+               values_to='Rating')
 
 head(rating_hyp_long_d)
 ```
@@ -180,8 +191,9 @@ Now you can help! For the rating dataset, write a test on a measurement name, us
 ```{r}
 rating_hyp_long_d = rating_hyp_long_d %>%
   mutate(
-    IsRecall = ,## Your code here
+    IsRecall = grepl("Friends|Strangers", Measurement)
   )
+head(rating_hyp_long_d)
 ```
 
 Here are a couple other useful ways of manipulating columns. (You won't remember all the functions you see here now, but that's okay. You can always reference this tutorial later if there's something you need to figure out how to do.)
@@ -228,7 +240,9 @@ The rating hypothesis analysis also requires some grouped manipulation. The expe
 
 ```{r}
 rating_summary_d = rating_hyp_long_d %>% 
-  ## your code here
+  group_by(Emotion, ConfrontationalGame) %>% 
+  summarize(MeanRating = mean(Rating, na.rm=T))
+
 ```
 
 Let's take a look at the result:
@@ -280,7 +294,8 @@ Now we're finally to reproduce Fig. 2 from Tamir et al., we just need to get the
 
 ```{r}
 performance_diff_summary_d = performance_diff_d %>%
-  ## Your code here
+  group_by(MusicCondition, ConfrontationalGame) %>% 
+  summarize(MeanImprovementScore = mean(ImprovementScore, na.rm=T))
 ```
 
 Let's take a look at your result (if it has `NA` values, how can you fix it?):
